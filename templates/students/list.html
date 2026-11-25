@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="border-b border-slate-200 bg-white">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white">E</div>
+      <div>
+        <h1 class="text-base font-semibold leading-tight">Online Enrollment System</h1>
+        <p class="text-xs text-slate-500">Student profiles · {{ total }} total</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      {% if user.is_authenticated %}
+        <span class="hidden rounded-full bg-indigo-50 px-3 py-1 text-indigo-700 sm:inline">Admin: {{ user.username }}</span>
+        <a href="{% url 'logout' %}" class="text-slate-600 hover:text-slate-900">Log out</a>
+      {% else %}
+        <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-slate-600 sm:inline">Guest (view only)</span>
+        <a href="{% url 'logout' %}" class="rounded-lg border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-50">Admin login</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[340px_1fr]">
+  {% for m in messages %}
+    <p class="rounded-lg px-4 py-2 text-sm lg:col-span-2 {% if m.tags == 'error' %}bg-red-50 text-red-700{% else %}bg-emerald-50 text-emerald-800{% endif %}">{{ m }}</p>
+  {% endfor %}
+
+  <!-- Student list -->
+  <aside class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:sticky lg:top-6 lg:self-start">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="font-semibold">Students</h2>
+      {% if user.is_authenticated %}
+        <a href="{% url 'student_add' %}" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700">+ Add Enrollee</a>
+      {% else %}
+        <a href="{% url 'logout' %}" title="Log in as admin to add enrollees" class="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-500">+ Add Enrollee</a>
+      {% endif %}
+    </div>
+    <form method="get" class="mb-3">
+      <input name="q" value="{{ q }}" placeholder="Search name or student no."
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+    </form>
+    <ul class="max-h-[65vh] space-y-1 overflow-y-auto">
+      {% for s in students %}
+        <li>
+          <a href="{% url 'student_detail' s.pk %}{% if q %}?q={{ q }}{% endif %}"
+             class="flex items-center gap-3 rounded-xl px-3 py-2.5 transition {% if selected and selected.pk == s.pk %}bg-indigo-50 ring-1 ring-indigo-200{% else %}hover:bg-slate-50{% endif %}">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">{{ s.initials }}</span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium">{{ s.last_name }}, {{ s.first_name }}</span>
+              <span class="block truncate text-xs text-slate-500">{{ s.student_number }} · {{ s.program }}</span>
+            </span>
+            <span class="h-2 w-2 shrink-0 rounded-full {% if s.status == 'Enrolled' %}bg-emerald-500{% elif s.status == 'Pending' %}bg-amber-400{% else %}bg-red-400{% endif %}"></span>
+          </a>
+        </li>
+      {% empty %}
+        <li class="px-3 py-8 text-center text-sm text-slate-500">No students found.</li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <!-- Profile panel -->
+  <section>
+  {% if selected %}
+    <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+      <div class="flex flex-wrap items-center gap-4 border-b border-slate-100 p-6">
+        <span class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white">{{ selected.initials }}</span>
+        <div class="flex-1">
+          <h2 class="text-xl font-semibold">{{ selected.full_name }}</h2>
+          <p class="text-sm text-slate-500">{{ selected.student_number }} · {{ selected.program }} · {{ selected.get_year_level_display }}{% if selected.section %} · Sec. {{ selected.section }}{% endif %}</p>
+        </div>
+        <span class="rounded-full px-3 py-1 text-xs font-semibold {% if selected.status == 'Enrolled' %}bg-emerald-100 text-emerald-700{% elif selected.status == 'Pending' %}bg-amber-100 text-amber-700{% else %}bg-red-100 text-red-700{% endif %}">{{ selected.status }}</span>
+        {% if user.is_authenticated %}
+          <a href="{% url 'student_edit' selected.pk %}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50">Edit</a>
+        {% endif %}
+      </div>
+
+      <div class="grid gap-px bg-slate-100 md:grid-cols-2">
+        <div class="bg-white p-6">
+          <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-600">Personal Info</h3>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Birth date</dt><dd>{{ selected.birth_date|date:"F j, Y" }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Gender</dt><dd>{{ selected.gender }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Nationality</dt><dd>{{ selected.nationality }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Religion</dt><dd>{{ selected.religion|default:"—" }}</dd></div>
+          </dl>
+        </div>
+        <div class="bg-white p-6">
+          <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-600">Contact Info</h3>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Email</dt><dd class="break-all text-right">{{ selected.email }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Phone</dt><dd>{{ selected.phone|default:"—" }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Address</dt><dd class="text-right">{{ selected.address }}</dd></div>
+          </dl>
+        </div>
+        <div class="bg-white p-6">
+          <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-600">Background Info</h3>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Guardian</dt><dd class="text-right">{{ selected.guardian_name }} ({{ selected.guardian_relationship }})</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Guardian contact</dt><dd>{{ selected.guardian_contact }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Previous school</dt><dd class="text-right">{{ selected.previous_school|default:"—" }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Year graduated</dt><dd>{{ selected.year_graduated|default:"—" }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Honors</dt><dd>{{ selected.honors|default:"—" }}</dd></div>
+          </dl>
+        </div>
+        <div class="bg-white p-6">
+          <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-indigo-600">Enrollment Info</h3>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Program</dt><dd class="text-right">{{ selected.program }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Year level</dt><dd>{{ selected.get_year_level_display }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Section</dt><dd>{{ selected.section|default:"—" }}</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-slate-500">Date enrolled</dt><dd>{{ selected.date_enrolled|date:"M j, Y" }}</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="rounded-2xl bg-white p-12 text-center text-slate-500 shadow-sm ring-1 ring-slate-200">
+      No students yet. {% if user.is_authenticated %}Click <b>+ Add Enrollee</b> to get started.{% else %}Log in as admin to add enrollees.{% endif %}
+    </div>
+  {% endif %}
+  </section>
+</main>
+{% endblock %}

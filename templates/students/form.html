@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}
+<main class="mx-auto max-w-3xl px-4 py-8">
+  <a href="{% url 'student_list' %}" class="text-sm text-indigo-600 hover:underline">← Back to students</a>
+  <h1 class="mb-6 mt-2 text-2xl font-semibold">{{ title }}</h1>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{{ form.non_field_errors }}</p>{% endif %}
+
+    {% for section_title, fields in form.sections %}
+      <fieldset class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <legend class="px-2 text-sm font-semibold text-indigo-600">{{ section_title }}</legend>
+        <div class="grid gap-4 sm:grid-cols-2">
+          {% for field in fields %}
+            <div class="{% if field.name == 'address' %}sm:col-span-2{% endif %}">
+              <label for="{{ field.id_for_label }}" class="mb-1 block text-sm font-medium">
+                {{ field.label }}{% if field.field.required %}<span class="text-red-500"> *</span>{% endif %}
+              </label>
+              {{ field }}
+              {% for e in field.errors %}<p class="mt-1 text-xs text-red-600">{{ e }}</p>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+    {% endfor %}
+
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'student_list' %}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50">Cancel</a>
+      <button class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Save</button>
+    </div>
+  </form>
+</main>
+{% endblock %}
